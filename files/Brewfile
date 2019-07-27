@@ -1,0 +1,8 @@
+tap "homebrew/bundle"
+tap "homebrew/cask"
+tap "homebrew/core"
+tap "homebrew/services"
+# Mac App Store command-line interface
+brew "mas"
+# Pinentry for GPG on Mac
+brew "pinentry-mac"

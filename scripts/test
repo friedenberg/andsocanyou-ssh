@@ -1,8 +1,0 @@
-#! /bin/sh
-
-gpgconf --kill gpg-agent
-rm -r ~/.gnupg/
-mkdir ~/.gnupg/
-cp -r gnupg/ ~/.gnupg/
-gpg-connect-agent /bye
-ssh -Tv git@github.com

@@ -3,30 +3,30 @@ SHELL = /bin/sh
 export SHELL
 
 DIR_BUILD := build
-GNUPG_FILES := $(wildcard gnupg/*)
-GNUPG_FILES_SCRIPTS := $(patsubst gnupg/%,build/%,$(GNUPG_FILES))
+DIR_GNUPG_FILES := gnupg_files
+GNUPG_FILES := $(wildcard $(DIR_GNUPG_FILES)/*)
+GNUPG_FILES_SCRIPTS := $(patsubst $(DIR_GNUPG_FILES)/%,build/%,$(GNUPG_FILES))
 
 all: build/bootstrap
 
-build/bootstrap: build/install_homebrew build/configure $(GNUPG_FILES_SCRIPTS) | build/
+build/bootstrap: build/configure $(GNUPG_FILES_SCRIPTS) | build/
 	-rm build/bootstrap
 
 	cat \
-		build/install_homebrew \
 		build/configure \
 		$(GNUPG_FILES_SCRIPTS) >> build/bootstrap
 
+	brew bundle exec -- shfmt -w build/bootstrap
+
 	chmod +x build/bootstrap
 
-build/install_homebrew: | build
-	cp scripts/install_homebrew build/
-
-build/configure:
+build/configure: files/Brewfile | build
 	-rm build/configure
 	echo "#! /bin/sh" >> build/configure
 	echo "" >> build/configure
+	echo '/usr/bin/ruby -e "$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"' >> build/configure
 	echo "cat << EOF | brew bundle install --file=-" >> build/configure
-	cat Brewfile >> build/configure
+	cat files/Brewfile >> build/configure
 	echo "EOF" >> build/configure
 	chmod +x build/configure
 
@@ -34,12 +34,25 @@ $(GNUPG_FILES_SCRIPTS): $(GNUPG_FILES)
 	echo "#! /bin/sh" >> build/$(notdir $@)
 	echo "" >> build/$(notdir $@)
 	echo "cat << EOF >> ~/.gnupg/$(notdir $@)" >> build/$(notdir $@)
-	cat gnupg/$(notdir $@) >> build/$(notdir $@)
+	cat $(DIR_GNUPG_FILES)/$(notdir $@) >> build/$(notdir $@)
 	echo "EOF" >> build/$(notdir $@)
 	chmod +x build/$(notdir $@)
 
 build/:
 	mkdir build/
+
+.PHONY: lint
+lint: build/bootstrap
+	brew bundle exec -- shellcheck build/bootstrap
+
+.PHONY: test_gnupg_files
+test_gnupg_files:
+	gpgconf --kill gpg-agent
+	-rm -r ~/.gnupg/
+	mkdir ~/.gnupg/
+	cp -r $(DIR_GNUPG_FILES)/ ~/.gnupg/
+	gpg-connect-agent /bye
+	env SSH_AUTH_SOCK=$$(gpgconf --list-dirs agent-ssh-socket) ssh -T git@github.com || true
 
 .PHONY: clean
 clean:
