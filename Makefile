@@ -7,6 +7,8 @@ DIR_GNUPG_FILES := gnupg_files
 GNUPG_FILES := $(wildcard $(DIR_GNUPG_FILES)/*)
 GNUPG_FILES_SCRIPTS := $(patsubst $(DIR_GNUPG_FILES)/%,build/%,$(GNUPG_FILES))
 
+CMD_BREW := brew bundle exec --
+
 all: build/bootstrap
 
 build/bootstrap: build/configure $(GNUPG_FILES_SCRIPTS) | build/
@@ -16,7 +18,7 @@ build/bootstrap: build/configure $(GNUPG_FILES_SCRIPTS) | build/
 		build/configure \
 		$(GNUPG_FILES_SCRIPTS) >> build/bootstrap
 
-	brew bundle exec -- shfmt -w build/bootstrap
+	$(CMD_BREW) shfmt -w build/bootstrap
 
 	chmod +x build/bootstrap
 
@@ -43,7 +45,7 @@ build/:
 
 .PHONY: lint
 lint: build/bootstrap
-	brew bundle exec -- shellcheck build/bootstrap
+	$(CMD_BREW) shellcheck build/bootstrap
 
 .PHONY: test_gnupg_files
 test_gnupg_files:
@@ -58,11 +60,6 @@ test_gnupg_files:
 clean:
 	-rm -r $(DIR_BUILD)
 
-.PHONY: install_deps
-install_deps:
-	brew install git
-	brew install hub
-
 .PHONY: bump_version
 bump_version:
 	"$${EDITOR:-$${VISUAL:-vi}}" ./VERSION
@@ -73,7 +70,7 @@ bump_version:
 
 .PHONY: release
 release: fail_if_stage_dirty $(DIR_BUILD)/bootstrap bump_version
-	hub release create \
+	$(CMD_BREW) hub release create \
 		-a $(DIR_BUILD)/bootstrap \
 		-m "v$$(cat ./VERSION)" \
 		"v$$(cat ./VERSION)"
