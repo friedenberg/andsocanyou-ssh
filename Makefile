@@ -7,20 +7,22 @@ DIR_GNUPG_FILES := gnupg_files
 GNUPG_FILES := $(wildcard $(DIR_GNUPG_FILES)/*)
 GNUPG_FILES_SCRIPTS := $(patsubst $(DIR_GNUPG_FILES)/%,build/%,$(GNUPG_FILES))
 
+FILE_OUTPUT := $(DIR_BUILD)/bootstrap
+
 CMD_BREW := brew bundle exec --
 
-all: build/bootstrap
+all: $(FILE_OUTPUT)
 
-build/bootstrap: build/configure $(GNUPG_FILES_SCRIPTS) | build/
-	-rm build/bootstrap
+$(FILE_OUTPUT): build/configure $(GNUPG_FILES_SCRIPTS) | build/
+	-rm $(FILE_OUTPUT)
 
 	cat \
 		build/configure \
-		$(GNUPG_FILES_SCRIPTS) >> build/bootstrap
+		$(GNUPG_FILES_SCRIPTS) >> $(FILE_OUTPUT)
 
-	$(CMD_BREW) shfmt -w build/bootstrap
+	$(CMD_BREW) shfmt -w $(FILE_OUTPUT)
 
-	chmod +x build/bootstrap
+	chmod +x $(FILE_OUTPUT)
 
 build/configure: files/Brewfile | build
 	-rm build/configure
@@ -44,8 +46,8 @@ build/:
 	mkdir build/
 
 .PHONY: lint
-lint: build/bootstrap
-	$(CMD_BREW) shellcheck build/bootstrap
+lint: $(FILE_OUTPUT)
+	$(CMD_BREW) shellcheck $(FILE_OUTPUT)
 
 .PHONY: test_gnupg_files
 test_gnupg_files:
@@ -69,9 +71,9 @@ bump_version:
 	git push origin master
 
 .PHONY: release
-release: fail_if_stage_dirty $(DIR_BUILD)/bootstrap bump_version
+release: fail_if_stage_dirty $(FILE_OUTPUT) bump_version
 	$(CMD_BREW) hub release create \
-		-a $(DIR_BUILD)/bootstrap \
+		-a $(FILE_OUTPUT) \
 		-m "v$$(cat ./VERSION)" \
 		"v$$(cat ./VERSION)"
 
