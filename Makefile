@@ -28,7 +28,7 @@ build/configure: files/Brewfile | build
 	-rm build/configure
 	echo "#! /bin/sh" >> build/configure
 	echo "" >> build/configure
-	echo '/usr/bin/ruby -e "$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"' >> build/configure
+	echo '/bin/bash -c "$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"' >> build/configure
 	echo "cat << EOF | brew bundle install --file=-" >> build/configure
 	cat files/Brewfile >> build/configure
 	echo "EOF" >> build/configure
